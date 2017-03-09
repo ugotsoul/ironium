@@ -1,53 +1,59 @@
 'use strict';
 require('../helpers');
-const assert  = require('assert');
-const Ironium = require('../..');
+const assert      = require('assert');
+const Ironium     = require('../..');
+const ms          = require('ms');
+const TimeKeeper  = require('timekeeper');
 
 
 describe('Queue with delay', function() {
 
-  const captureQueue = Ironium.queue('capture');
+  const delayedQueue  = Ironium.queue('delayedJob');
 
-  // Capture processed jobs here.
-  const processed = [];
-
-  before(function() {
-    captureQueue.eachJob(function(job) {
-      processed.push(job);
-      return Promise.resolve();
-    });
-  });
+  let queuedTime;
 
   before(function() {
-    return captureQueue.delayJob('delayed', '2s');
+    return delayedQueue.delayJob('delayed', '2m')
+      .then(function(job) {
+        queuedTime = job.queuedTime;
+      });
   });
+
   before(Ironium.runOnce);
 
   it('should not process immediately', function() {
-    assert.equal(processed.length, 0);
+    const noProcessedJob = queuedTime + ms('2m') > Date.now();
+    assert(noProcessedJob);
   });
 
-  describe('after short delay', function() {
-    before(function(done) {
-      setTimeout(done, 1500);
+  describe('after 1 minute', function() {
+    before(function() {
+      TimeKeeper.travel(Date.now() + ms('1m'));
     });
+
     before(Ironium.runOnce);
 
     it('should not process job', function() {
-      assert.equal(processed.length, 0);
+      const noProcessedJob = queuedTime + ms('2m') > Date.now();
+      assert(noProcessedJob);
     });
+
+    after(TimeKeeper.reset);
   });
 
-  describe('after sufficient delay', function() {
-    before(function(done) {
-      setTimeout(done, 1000);
+  describe('after 2 minutes', function() {
+    before(function() {
+      TimeKeeper.travel(Date.now() + ms('3m'));
     });
+
     before(Ironium.runOnce);
 
     it('should process job', function() {
-      assert.equal(processed.length, 1);
-      assert.equal(processed[0], 'delayed');
+      const hasProcessedJob = Date.now() > queuedTime + ms('2m');
+      assert(hasProcessedJob);
     });
+
+    after(TimeKeeper.reset);
   });
 
 });

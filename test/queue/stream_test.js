@@ -60,7 +60,7 @@ describe('Stream', function() {
 
   it('should provide queued job IDs', function() {
     assert.equal(jobIDs.length, 100);
-    for (const id of jobIDs)
+    for (const id in jobIDs)
       assert(/^\d+$/.test(id));
   });
 
