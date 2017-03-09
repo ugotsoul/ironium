@@ -43,7 +43,7 @@ describe('Queue with delay', function() {
 
   describe('after 2 minutes', function() {
     before(function() {
-      TimeKeeper.travel(Date.now() + ms('3m'));
+      TimeKeeper.travel(Date.now() + ms('2m'));
     });
 
     before(Ironium.runOnce);
